@@ -76,7 +76,7 @@ export interface AppSettings {
 }
 
 const DEFAULT_APP_SETTINGS: AppSettings = {
-  defaultDateRangeDays: 30,
+  defaultDateRangeDays: 7,
   refreshIntervalMinutes: 0,
   compactMode: false,
   companyName: "",

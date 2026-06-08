@@ -34,7 +34,7 @@ function formatLocalDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function getDefaultStartDate(days: number = 30): string {
+function getDefaultStartDate(days: number = 7): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   return formatLocalDate(date);
@@ -219,7 +219,7 @@ export function useAccountInfo() {
   return { ...fast, data: merged as AccountInfo | undefined };
 }
 
-export function useDefaultDateRange(days: number = 30): DateRange {
+export function useDefaultDateRange(days: number = 7): DateRange {
   return {
     startDate: getDefaultStartDate(days),
     endDate: getDefaultEndDate(),
