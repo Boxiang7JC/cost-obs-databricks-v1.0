@@ -243,46 +243,23 @@ function Dashboard() {
       localStorage.getItem("coc-setup-complete") === "true" ||
       sessionStorage.getItem("coc-setup-complete") === "true";
 
-    Promise.all([
-      fetch("/api/setup/status", { signal: controller.signal }).then((r) => r.json()),
-      fetch("/api/settings/user-permissions", { signal: controller.signal }).then((r) => r.json()).catch(() => null),
-    ])
-      .then(([status, permissions]) => {
+    fetch("/api/setup/status", { signal: controller.signal })
+      .then((r) => r.json())
+      .then((status) => {
         clearTimeout(timeout);
         setSetupCheckPending(false);
-
-        // Non-admins never see the setup wizard — it's an admin-only task.
-        // If admins list is empty the app is freshly deployed and everyone is treated as admin.
-        const isAdmin = !permissions?.admins?.length ||
-          (permissions?.current_user && permissions.admins.includes(permissions.current_user));
-        if (!isAdmin) {
-          sessionStorage.setItem("coc-setup-complete", "true");
-          setShowSetupWizard(false);
-          return;
-        }
-
+        // Never auto-show the wizard on load — setup runs once and admins can
+        // access it any time via Settings → Setup Wizard.
         if (status?.status === "ready") {
           localStorage.setItem("coc-setup-complete", "true");
           sessionStorage.setItem("coc-setup-complete", "true");
-          setShowSetupWizard(false);
-        } else if (status?.status === "setup_required") {
-          // Only show wizard on a definitive "setup_required" — not on transient states
-          // like "initializing". Avoids wizard flash during cold start or mid-build polling.
-          if (!prevCompleted()) {
-            localStorage.removeItem("coc-setup-complete");
-            sessionStorage.removeItem("coc-setup-complete");
-            setShowSetupWizard(true);
-          }
         }
-        // "initializing" and other transient states: no wizard change, but unblock dashboard
+        setShowSetupWizard(false);
       })
       .catch(() => {
         clearTimeout(timeout);
         setSetupCheckPending(false);
-        // Network error, timeout, or non-JSON — trust local cache rather than flashing wizard.
-        if (!prevCompleted()) {
-          setShowSetupWizard(true);
-        }
+        setShowSetupWizard(false);
       });
 
     return () => { clearTimeout(timeout); controller.abort(); };
