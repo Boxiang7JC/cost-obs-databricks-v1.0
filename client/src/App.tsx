@@ -243,11 +243,24 @@ function Dashboard() {
       localStorage.getItem("coc-setup-complete") === "true" ||
       sessionStorage.getItem("coc-setup-complete") === "true";
 
-    fetch("/api/setup/status", { signal: controller.signal })
-      .then((r) => r.json())
-      .then((status) => {
+    Promise.all([
+      fetch("/api/setup/status", { signal: controller.signal }).then((r) => r.json()),
+      fetch("/api/settings/user-permissions", { signal: controller.signal }).then((r) => r.json()).catch(() => null),
+    ])
+      .then(([status, permissions]) => {
         clearTimeout(timeout);
         setSetupCheckPending(false);
+
+        // Non-admins never see the setup wizard — it's an admin-only task.
+        // If admins list is empty the app is freshly deployed and everyone is treated as admin.
+        const isAdmin = !permissions?.admins?.length ||
+          (permissions?.current_user && permissions.admins.includes(permissions.current_user));
+        if (!isAdmin) {
+          sessionStorage.setItem("coc-setup-complete", "true");
+          setShowSetupWizard(false);
+          return;
+        }
+
         if (status?.status === "ready") {
           localStorage.setItem("coc-setup-complete", "true");
           sessionStorage.setItem("coc-setup-complete", "true");
